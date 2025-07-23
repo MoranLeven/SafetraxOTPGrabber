@@ -3,6 +3,7 @@ import time
 import hashlib
 import json
 from urllib.parse import quote
+from datetime import datetime
 
 def getNonce(headers):
     wwwAuthen = headers.get("WWW-Authenticate")
@@ -106,20 +107,24 @@ def getEmployeeFullName(userdata):
 def parseBoardingDataForTelegram(boardingData):
     otpMorningMessage = ""
     otpEveningMessage = ""
+    eveningDate = 0
+    morningDate = 0
     for rosterData in boardingData['roosterBoardingData']:
         if "eveningRosterOTPs" == rosterData:
+            eveningDate = boardingData['roosterBoardingData']['eveningRosterDate']
             for employeeOTPData in boardingData['roosterBoardingData'][rosterData]:
                 otpEveningMessage += f"{employeeOTPData['Name']} :: <code>{employeeOTPData['OTP']}</code> \n"
         elif "morningRoosterOTPs" == rosterData:
+            morningDate = boardingData['roosterBoardingData']['morningRosterDate']
             for employeeOTPData in boardingData['roosterBoardingData'][rosterData]:
                 otpMorningMessage += f"{employeeOTPData['Name']} :: <code>{employeeOTPData['OTP']}</code> \n"
     
     finalMessage = f'''
     
-    {"🚕Login Boarding" if otpMorningMessage else ""}
+    {"🚕Login Boarding..." + morningDate.strftime("%d-%m-%Y") if otpMorningMessage else ""}
 {otpMorningMessage}
     
-    {"👋Logout Boarding" if otpEveningMessage else ""}
+{"👋Logout Boarding..." + eveningDate.strftime("%d-%m-%Y") if otpEveningMessage else ""}
 {otpEveningMessage}
     
     '''
@@ -139,12 +144,16 @@ def getBoardingData(username, response, onlyEmployeeBoardingData=False):
 
     morningRoosterOTPs = []
     eveningRosterOTPs = []
-
+    morningRosterDate = 0
+    eveningRosterDate = 0
     # get the otps
     for trip in tripParsedData:
         tripEmployees = trip["employees"]
         for employeeData in tripEmployees:
             if employeeData["travelFor"] == "login":
+                if not morningRosterDate:
+                    morningRosterDate = datetime.fromtimestamp(trip['scheduleDate']//1000)
+                
                 morningRoosterOTPs.append(
                     {
                         "Name": employeeData["fullName"],
@@ -156,6 +165,8 @@ def getBoardingData(username, response, onlyEmployeeBoardingData=False):
                     morningOTP = employeeData["pin"]
                     morningOTPSecondary = employeeData["secondaryPin"]
             elif employeeData["travelFor"] == "logout":
+                if not eveningRosterDate:
+                    eveningRosterDate = datetime.fromtimestamp(trip['scheduleDate']//1000)
                 eveningRosterOTPs.append(
                     {
                         "Name": employeeData["fullName"],
@@ -190,9 +201,12 @@ def getBoardingData(username, response, onlyEmployeeBoardingData=False):
 
     if morningRoosterOTPs:
         boardingData["roosterBoardingData"]["morningRoosterOTPs"] = morningRoosterOTPs
+        boardingData['roosterBoardingData']['morningRosterDate'] = morningRosterDate
+        
 
     if eveningRosterOTPs:
         boardingData["roosterBoardingData"]["eveningRosterOTPs"] = eveningRosterOTPs
+        boardingData['roosterBoardingData']['eveningRosterDate'] = eveningRosterDate
 
     return (
         boardingData["employeeBoardingData"]
