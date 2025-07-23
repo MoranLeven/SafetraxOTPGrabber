@@ -79,10 +79,9 @@ def getEmployeeId(userData):
 
 def getEmployeeDataFromJSON(name):
     try:
-        rawFileData = open(f"{name}_data.json", "r").readlines()
-        parseFileData = json.loads(rawFileData[0])
-        rawFileData.close()
-        return parseFileData
+        with open(f"{name}_data.json","r") as rawFileData:
+            parseFileData = json.loads(rawFileData.read)
+            return parseFileData
     except:
         raise FileNotFoundError
 
