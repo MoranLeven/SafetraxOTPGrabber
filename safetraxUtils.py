@@ -81,7 +81,8 @@ def getEmployeeId(userData):
 def getEmployeeDataFromJSON(name):
     try:
         with open(f"{name}_data.json","r") as rawFileData:
-            parseFileData = json.loads(rawFileData.read())
+            rawFileData = open(f"{name}_data.json", "r")
+            parseFileData = json.loads(rawFileData.readlines()[0])
             return parseFileData
     except:
         raise FileNotFoundError
@@ -102,32 +103,34 @@ def writeTokenIntoFile(filename, authToken, employeeId, fullname, employeeData):
 
 def getEmployeeFullName(userdata):
     return userdata["userInfo"]["fullName"]
-
-
+    
 def parseBoardingDataForTelegram(boardingData):
     otpMorningMessage = ""
     otpEveningMessage = ""
-    eveningDate = 0
-    morningDate = 0
     for rosterData in boardingData['roosterBoardingData']:
         if "eveningRosterOTPs" == rosterData:
-            eveningDate = boardingData['roosterBoardingData']['eveningRosterDate']
-            for employeeOTPData in boardingData['roosterBoardingData'][rosterData]:
-                otpEveningMessage += f"{employeeOTPData['Name']} :: <code>{employeeOTPData['OTP']}</code> \n"
+            # eveningDate = boardingData['roosterBoardingData']['eveningRosterDate']
+            # for employeeOTPData in boardingData['roosterBoardingData'][rosterData]:
+            #     otpEveningMessage += f"{employeeOTPData['Name']} :: <code>{employeeOTPData['OTP']}</code> \n"
+                
+            for boardingDate, empOtpData in boardingData['roosterBoardingData'][rosterData].items():
+                goodTime = datetime.fromtimestamp(boardingDate//1000)
+                otpEveningMessage += f"\n\n{goodTime.strftime("%d-%m-%Y")}" + "".join([f'\n{emp['Name']} :: <code>{emp['OTP']}</code>' for emp in empOtpData])
         elif "morningRoosterOTPs" == rosterData:
-            morningDate = boardingData['roosterBoardingData']['morningRosterDate']
-            for employeeOTPData in boardingData['roosterBoardingData'][rosterData]:
-                otpMorningMessage += f"{employeeOTPData['Name']} :: <code>{employeeOTPData['OTP']}</code> \n"
+            # morningDate = boardingData['roosterBoardingData']['morningRosterDate']
+            # for employeeOTPData in boardingData['roosterBoardingData'][rosterData].items():
+            #     otpMorningMessage += f"{employeeOTPData['Name']} :: <code>{employeeOTPData['OTP']}</code> \n"
     
+            for boardingDate, empOtpData in boardingData['roosterBoardingData'][rosterData].items():
+                goodTime = datetime.fromtimestamp(boardingDate//1000)
+                otpMorningMessage += f"\n\n{goodTime.strftime("%d-%m-%Y")}" + "".join([f'\n{emp['Name']} :: <code>{emp['OTP']}</code>' for emp in empOtpData])
+
+            
     finalMessage = f'''
+🚕Login Boarding...{otpMorningMessage}
     
-    {"🚕Login Boarding..." + morningDate.strftime("%d-%m-%Y") if otpMorningMessage else ""}
-{otpMorningMessage}
-    
-{"👋Logout Boarding..." + eveningDate.strftime("%d-%m-%Y") if otpEveningMessage else ""}
-{otpEveningMessage}
-    
-    '''
+👋Logout Boarding...{otpEveningMessage}
+'''
     
     return quote(finalMessage)
 
@@ -142,8 +145,8 @@ def getBoardingData(username, response, onlyEmployeeBoardingData=False):
     eveningOTP = None
     eveningOTPSecondary = None
 
-    morningRoosterOTPs = []
-    eveningRosterOTPs = []
+    morningRoosterOTPs = {}
+    eveningRosterOTPs = {}
     morningRosterDate = 0
     eveningRosterDate = 0
     # get the otps
@@ -151,29 +154,30 @@ def getBoardingData(username, response, onlyEmployeeBoardingData=False):
         tripEmployees = trip["employees"]
         for employeeData in tripEmployees:
             if employeeData["travelFor"] == "login":
-                if not morningRosterDate:
-                    morningRosterDate = datetime.fromtimestamp(trip['scheduleDate']//1000)
                 
-                morningRoosterOTPs.append(
-                    {
+                tempData = morningRoosterOTPs.get(trip['scheduleDate'],[])
+                tempData.append({
                         "Name": employeeData["fullName"],
                         "OTP": employeeData["pin"],
-                        "SecondarOTP": employeeData["secondaryPin"],
-                    }
-                )
+                        "SecondarOTP": employeeData["secondaryPin"]})
+                
+                morningRoosterOTPs[trip['scheduleDate']] = tempData
+                
                 if employeeData["fullName"] == employeeName:
                     morningOTP = employeeData["pin"]
                     morningOTPSecondary = employeeData["secondaryPin"]
+                    
             elif employeeData["travelFor"] == "logout":
-                if not eveningRosterDate:
-                    eveningRosterDate = datetime.fromtimestamp(trip['scheduleDate']//1000)
-                eveningRosterOTPs.append(
-                    {
+                # if not eveningRosterDate:
+                #     eveningRosterDate = datetime.fromtimestamp(trip['scheduleDate']//1000)
+                tempData = eveningRosterOTPs.get(trip['scheduleDate'],[])
+                tempData.append({
                         "Name": employeeData["fullName"],
                         "OTP": employeeData["pin"],
-                        "SecondarOTP": employeeData["secondaryPin"],
-                    }
-                )
+                        "SecondarOTP": employeeData["secondaryPin"],})
+                eveningRosterOTPs[trip['scheduleDate']] = tempData
+                
+                
                 if employeeData["fullName"] == employeeName:
                     eveningOTP = employeeData["pin"]
                     eveningOTPSecondary = employeeData["secondaryPin"]

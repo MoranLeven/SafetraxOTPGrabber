@@ -95,7 +95,7 @@ class Safetrax:
         url = urls.GET_TRIP_URL
         payload = {
             "employees._employeeId": self.employeeId,
-            "startTime": {"$gte": round(time.time()) * 1000},
+            "startTime": {"$lte": round(time.time()) * 1000 + 86400000, "$gte": round(time.time()) * 1000 - 86400000 },
         }
         headers = self.oAuthHeaders
         response = self.requester.post(url, headers=headers, payload=payload)
