@@ -109,7 +109,7 @@ class Safetrax:
         url = urls.TELEGRAM_SEND_MESSAGE_URL.format(botToken)
         payload = (
             f"chat_id={chatId}&"+
-            f"text={safetraxUtils.parseBoardingDataForTelegram(self.boardingData)}&"+
+            f"text={safetraxUtils.parseBoardingDataForTelegram(self.fullname, self.boardingData)}&"+
             f"parse_mode=html"
         )
         headers = {

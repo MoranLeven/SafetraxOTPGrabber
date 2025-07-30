@@ -104,7 +104,7 @@ def writeTokenIntoFile(filename, authToken, employeeId, fullname, employeeData):
 def getEmployeeFullName(userdata):
     return userdata["userInfo"]["fullName"]
     
-def parseBoardingDataForTelegram(boardingData):
+def parseBoardingDataForTelegram(username, boardingData):
     otpMorningMessage = ""
     otpEveningMessage = ""
     for rosterData in boardingData['roosterBoardingData']:
@@ -115,7 +115,7 @@ def parseBoardingDataForTelegram(boardingData):
                 
             for boardingDate, empOtpData in boardingData['roosterBoardingData'][rosterData].items():
                 goodTime = datetime.fromtimestamp(boardingDate//1000)
-                otpEveningMessage += f"\n\n{goodTime.strftime("%d-%m-%Y")}" + "".join([f'\n{emp['Name']} :: <code>{emp['OTP']}</code>' for emp in empOtpData])
+                otpEveningMessage += f"\n\n{goodTime.strftime("%d-%m-%Y")}" + "".join([f'\n{'<strong>'+emp['Name']+'</strong>' if emp['Name'] == username else emp['Name']} :: <code>{emp['OTP']}</code>' for emp in empOtpData])
         elif "morningRoosterOTPs" == rosterData:
             # morningDate = boardingData['roosterBoardingData']['morningRosterDate']
             # for employeeOTPData in boardingData['roosterBoardingData'][rosterData].items():
@@ -123,7 +123,7 @@ def parseBoardingDataForTelegram(boardingData):
     
             for boardingDate, empOtpData in boardingData['roosterBoardingData'][rosterData].items():
                 goodTime = datetime.fromtimestamp(boardingDate//1000)
-                otpMorningMessage += f"\n\n{goodTime.strftime("%d-%m-%Y")}" + "".join([f'\n{emp['Name']} :: <code>{emp['OTP']}</code>' for emp in empOtpData])
+                otpMorningMessage += f"\n\n{goodTime.strftime("%d-%m-%Y")}" + "".join([f'\n{'<strong>'+emp['Name']+'</strong>' if emp['Name'] == username else emp['Name']} :: <code>{emp['OTP']}</code>' for emp in empOtpData])
 
             
     finalMessage = f'''
