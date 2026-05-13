@@ -1,3 +1,5 @@
+# Note: Safetrax login api have been changed it may not work now. 
+
 # 🚖 Safetrax OTP Grabber
 
 SafetraxOTPGrabber is a simple tool designed to make your cab boarding experience smoother and faster! ✨
@@ -27,7 +29,7 @@ This project is used to automatically generate the OTP required to board cabs us
    - Add your Telegram Bot token and chat ID in the configuration file.
 
 3. **Run the tool**  
-   *(Add specific run instructions here, e.g., python main.py or npm start)*
+   
 
 ## ⚡ Example Workflow
 
@@ -38,7 +40,7 @@ This project is used to automatically generate the OTP required to board cabs us
 ## 📝 Notes
 
 - Make sure your API credentials and Telegram Bot details are kept secure. 🔒
-- For more customization, edit the config file as needed.
+-
 
 ## 🤝 Contributing
 
